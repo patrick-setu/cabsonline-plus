@@ -49,22 +49,34 @@ function App() {
         "Auckland Airport": [-37.0082, 174.7850]
     };
 
-    // Sample route distances used to calculate estimated taxi fares
-    const suburbDistances = {
-        "Auckland CBD-Northcote": 9,
-        "Auckland CBD-Newmarket": 5,
-        "Mount Eden-Newmarket": 4,
-        "Manukau-Auckland Airport": 10,
-        "Northcote-Auckland CBD": 9,
-        "Newmarket-Auckland CBD": 5
-    };
-
     const pickupPosition = suburbLocations[pickupSuburb];
     const destinationPosition = suburbLocations[destinationSuburb];
 
-    // Calculates a simple fare estimate from base fare, distance charge, and service fee
-    const distanceKey = `${pickupSuburb}-${destinationSuburb}`;
-    const estimatedDistance = suburbDistances[distanceKey] || 8;
+    // Calculates the approximate distance in kilometres between two map coordinates
+    function calculateDistance(positionOne, positionTwo) {
+        const earthRadius = 6371;
+        const latOne = positionOne[0] * Math.PI / 180;
+        const latTwo = positionTwo[0] * Math.PI / 180;
+        const latDifference = (positionTwo[0] - positionOne[0]) * Math.PI / 180;
+        const lonDifference = (positionTwo[1] - positionOne[1]) * Math.PI / 180;
+
+        // Uses a distance formula to estimate the straight-line distance between the two suburbs
+        const a =
+            Math.sin(latDifference / 2) * Math.sin(latDifference / 2) +
+            Math.cos(latOne) * Math.cos(latTwo) *
+            Math.sin(lonDifference / 2) * Math.sin(lonDifference / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return earthRadius * c;
+    }
+
+    // Rounds the calculated distance and make sure minimum displayed distance is 1km
+    const estimatedDistance = Math.max(
+        1,
+        Math.round(calculateDistance(pickupPosition, destinationPosition))
+    );
+
+    // Calculates the estimated taxi fare using a base fare, distance charge, and service fee
     const baseFare = 4;
     const distanceCharge = estimatedDistance * 2.5;
     const serviceFee = 2;
